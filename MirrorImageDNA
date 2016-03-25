@@ -1,0 +1,63 @@
+Mapper:
+
+package my;
+import java.io.IOException;
+
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+public class StubMapper extends Mapper<Object, Text, Text, Text> {
+
+  @Override
+  public void map(Object key, Text value, Context context)
+      throws IOException, InterruptedException {
+    /*
+     * TODO implement
+     */
+	  String keyString = "" ;
+	  String[] words = value.toString().split("\\s");
+	  StringBuilder reverseString = new StringBuilder(words[1]);
+		//reverse the strings and compare them lexically
+		reverseString.reverse().toString(); 
+		if(reverseString.toString() .compareTo(words[1]) > 0){
+			keyString = reverseString.toString();
+		}
+		else
+			keyString = words[1].toString();
+	  context.write(new Text(keyString), new Text(words[0]));
+  }
+}
+
+
+Reducer:
+
+package my;
+import java.io.IOException;
+
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class StubReducer extends Reducer<Text, Text, Text, Text> {
+
+  @Override
+  public void reduce(Text key, Iterable<Text> values, Context context)
+      throws IOException, InterruptedException {
+	  
+	
+	  long sum = 0;
+	  String Users = "";
+	  for(Text iw:values)
+	  {
+		  sum += 1;
+		  Users = Users + iw.toString() +"    ";
+	  }
+	  
+	  String output = "Users with Mirror Image DNA " + key.toString()+"/" +new StringBuffer( key.toString()).reverse().toString()+" are: " ;
+	  if(sum > 1 )
+		  context.write(new Text(output), new Text(Users));
+  }
+}
+
