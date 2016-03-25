@@ -1,0 +1,158 @@
+//Note that I used two mappers at a time and changed driver as well to get the two input files
+//Driver
+package my;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+
+public class StubDriver {
+
+	public static void main(String[] args) throws Exception {
+		if (args.length != 3) {
+			System.out.printf("Usage: StubDriver <input dir> <input dir> <output dir>\n");
+			System.exit(-1);
+		}
+		JobConf conf = new JobConf();
+		Job job = new Job(conf, "wordcount");
+		job.setJarByClass(StubDriver.class);
+		
+		job.setMapperClass(StubMapper.class);
+		job.setReducerClass(StubReducer.class);
+		job.setMapperClass(StubMapper2.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Text.class);
+		job.setMapOutputKeyClass(Text.class);
+		job.setMapOutputValueClass(Text.class);
+		
+		//job.setInputFormatClass(FixedLengthInputFormat.class);
+		//FixedLengthInputFormat.setRecordLength(conf, 15);
+		
+		FileInputFormat.addInputPath(job, new Path(args[0]));
+		FileInputFormat.addInputPath(job, new Path(args[1]));
+		FileOutputFormat.setOutputPath(job, new Path(args[2]));
+		
+		boolean result = job.waitForCompletion(true);
+		System.exit(result ? 0 : 1);
+	}
+}
+
+
+//Mapper 1
+
+package my;
+import java.io.IOException;
+
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+public class StubMapper extends Mapper<Object, Text, Text, Text> {
+
+  @Override
+  public void map(Object key, Text value, Context context)
+      throws IOException, InterruptedException {
+    /*
+     * TODO implement
+     */
+	  String[] words = value.toString().split("\\s");
+	
+	  context.write(new Text(words[0]), new Text(words[1]));
+  }
+}
+
+//Mapper 2
+
+package my;
+
+import java.io.IOException;
+
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+public class StubMapper2 extends Mapper<Object, Text, Text, Text> {
+	
+	@Override
+	protected void map(Object key, Text value, Mapper<Object, Text, Text, Text>.Context context)
+			throws IOException, InterruptedException {
+		/*
+	     * TODO implement
+	     */
+		  String[] words = value.toString().split("\\s");
+		 System.err.println("Map2::words0:: "+ words[0] +":"+ words[1]);
+		  context.write(new Text(words[0]), new Text(words[1]));
+	}
+
+}
+
+//1st Reducer
+package my;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class StubReducer extends Reducer<Text, Text, Text, LongWritable> {
+
+  @Override
+  public void reduce(Text key, Iterable<Text> values, Context context)
+      throws IOException, InterruptedException {
+	  
+	
+//	  long count = 0;
+	  long worth = 0;
+	  List<String> voterList = new ArrayList<String>();
+
+		  for(Text iw:values)
+		  {
+			  if(iw.toString().matches("\\d+"))
+			  {
+					
+				  worth = Long.parseLong(iw.toString());
+				}
+			  else
+			  voterList.add(iw.toString()) ;
+		  }
+		  
+		  for (String member : voterList) {
+			  context.write(new Text(member), new LongWritable(worth));
+		}
+		  context.write(key, new LongWritable(0));
+  }
+}
+
+//Note that there will be one more mapper to just combine the key and values 
+//2nd Reducer will add the total worth
+
+package my;
+import java.io.IOException;
+
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class StubReducer2 extends Reducer<Text, Text, Text, Text> {
+
+  @Override
+  public void reduce(Text key, Iterable<LongWritable> values, Context context)
+      throws IOException, InterruptedException {
+	  
+	
+	  	  
+	  long sum = 0;
+	  for(LongWritable iw:values)
+	  {
+		  sum += iw.get();
+	  }
+	  context.write(key, new LongWritable(sum));
+  }
+}
