@@ -1,0 +1,53 @@
+Mapper Code
+
+public class StubMapper extends Mapper<Object, Text, Text, Text> {
+
+  @Override
+  public void map(Object key, Text value, Context context)
+      throws IOException, InterruptedException {
+    /*
+     * TODO implement
+     */
+	  String[] words = value.toString().split("\\s");
+	  for(String word:words)
+	  {
+//		  System.out.println("ddd");
+//		  System.err.println("erorr");
+		  char[] characters =	word.toCharArray();
+		  Arrays.sort(characters);
+		  String sortedWord = new String(characters);
+		  context.write(new Text(sortedWord), new Text(word));
+	  }
+  }
+}
+
+Reducer Code
+
+package my;
+import java.io.IOException;
+
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class StubReducer extends Reducer<Text, Text, Text, Text> {
+
+  @Override
+  public void reduce(Text key, Iterable<Text> values, Context context)
+      throws IOException, InterruptedException {
+	  
+	
+	  long sum = 0;
+	  String anagrams = "";
+	  for(Text iw:values)
+	  {
+		  sum += 1;
+		  anagrams = anagrams + iw.toString() +"    ";
+	  }
+	  if(sum > 1 )
+		  context.write(new Text("Angrams are :"), new Text(anagrams));
+  }
+}
+
